@@ -14,7 +14,8 @@
     "lib/",
     "extension/",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -30,6 +31,11 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.1.5-rc.1": "compatible"
+      }
     }
   },
   "peerDependencies": {
@@ -49,5 +55,25 @@
     "@types/ws": "^8.5.13",
     "esbuild": "^0.24.2",
     "typescript": "^5.7.2"
+  },
+  "license": "MIT",
+  "author": "DIV7NE",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin",
+    "chrome",
+    "cdp",
+    "browser-automation"
+  ],
+  "homepage": "https://github.com/DIV7NE/dsh-plugins/tree/main/dsh-chrome-agent#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DIV7NE/dsh-plugins.git",
+    "directory": "dsh-chrome-agent"
+  },
+  "bugs": {
+    "url": "https://github.com/DIV7NE/dsh-plugins/issues"
   }
 }

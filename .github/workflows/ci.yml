@@ -49,3 +49,56 @@ jobs:
             exit 1
           fi
           echo "lib/ matches src/"
+
+  chrome-agent:
+    name: dsh-chrome-agent (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    defaults:
+      run:
+        working-directory: dsh-chrome-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: dsh-chrome-agent/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # lib/ is committed on purpose (no lifecycle script may build it at install
+      # time), so it must never drift from src/.
+      - name: Committed bundle matches source
+        run: |
+          if [ -n "$(git status --porcelain -- lib)" ]; then
+            echo "lib/ is stale — rebuild and commit it:"
+            git --no-pager diff --stat -- lib
+            exit 1
+          fi
+          echo "lib/ matches src/"
+
+      # The extension ships to the Chrome Web Store as its own artifact, packed
+      # from extension/ into a root-level zip. Prove that still works, because a
+      # broken pack:webstore is not visible from the plugin's own tests.
+      - name: Pack the web store zip
+        run: npm run pack:webstore
+
+      - name: The zip contains the extension at its root
+        working-directory: dsh-chrome-agent
+        run: |
+          node -e "const z=require('fs').readFileSync('dsh-chrome-agent-webstore.zip');const has=x=>z.includes(Buffer.from(x));if(!has('manifest.json')){console.error('manifest.json missing from zip');process.exit(1)}console.log('webstore zip contains manifest.json at its root')"
