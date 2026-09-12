@@ -14,14 +14,14 @@
     "prompt",
     "copilot"
   ],
-  "homepage": "https://github.com/DIV7NE/dshpluginsdev/tree/main/dsh-suggest-next-prompt#readme",
+  "homepage": "https://github.com/DIV7NE/dsh-plugins/tree/main/dsh-suggest-next-prompt#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DIV7NE/dshpluginsdev.git",
+    "url": "git+https://github.com/DIV7NE/dsh-plugins.git",
     "directory": "dsh-suggest-next-prompt"
   },
   "bugs": {
-    "url": "https://github.com/DIV7NE/dshpluginsdev/issues"
+    "url": "https://github.com/DIV7NE/dsh-plugins/issues"
   },
   "main": "lib/index.js",
   "exports": {
