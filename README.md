@@ -10,6 +10,7 @@ hand.
 | Plugin | What it does |
 |---|---|
 | [`dsh-suggest-next-prompt/`](dsh-suggest-next-prompt/) | Puts a model-generated next prompt in the chat composer's placeholder. `Tab` pastes it, `↑`/`↓` cycle the shortlist, `Esc` dismisses. |
+| [`dsh-chrome-agent/`](dsh-chrome-agent/) | Drives your real, already logged-in Chrome through a pinned companion extension, instead of a separate browser profile. |
 | [dsh-run-in-terminal](#dsh-run-in-terminal) | A **Run** button on every chat code block, and an integrated terminal in the right sidebar to run it in. |
 
 ## Installing a plugin
@@ -25,6 +26,21 @@ Then **restart the DSH server for that profile** — a profile's bundle stack an
 the browser's client-module graph are both composed at boot, so a new plugin
 cannot appear in a running server. Once a plugin is in the graph, later changes
 need only a page reload.
+
+## The Chrome extension
+
+`dsh-chrome-agent` ships two artifacts from one directory, and they are released
+separately:
+
+- the **DSH plugin** (this repository's package, installed like its siblings);
+- the **Chrome extension**, a plain folder under `dsh-chrome-agent/extension/`
+  packed by `scripts/pack-webstore.mjs` into a root-level zip, which is the
+  artifact the Chrome Web Store uploads. It is built and attached to Releases,
+  not published through the DSH plugin channel.
+
+`npm run pack:webstore` in that directory regenerates the zip. CI runs it and
+asserts the zip still contains `manifest.json` at its root, because the plugin's
+own tests would not notice a broken packer.
 
 ## Repository layout
 
