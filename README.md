@@ -54,6 +54,34 @@ npm run install:profile
 
 `npm run build && npm run typecheck && npm test` is the same gate CI runs.
 
+## Release status
+
+Both plugins pass the DSH-Store fixed-source precheck. Submission issues:
+
+| Plugin | Issue | Precheck |
+|---|---|---|
+| `dsh-suggest-next-prompt` | [#778](https://github.com/AI-Scarlett/DSH-Store/issues/778) | passed, 1 warning |
+| `dsh-run-in-terminal` | [#779](https://github.com/AI-Scarlett/DSH-Store/issues/779) | passed, 2 warnings, partial scan |
+
+The precheck is a bounded static read of the pinned commit. It is **not** a
+security audit, not a runtime verification, and not an automatic listing — the
+Catalog gate that follows re-pins the source and applies stricter licence,
+dependency, lifecycle, bundle and runtime-source checks before anything appears
+in the store.
+
+Two known constraints, stated rather than hidden:
+
+- **`scripts/install-profile.mjs`** in each plugin invokes `npm`, `npm pack` and
+  the `dsh` CLI through `child_process` so that a rebuild-and-reinstall is one
+  command. Both plugins' prechecks flag it. It is a local development helper: it
+  is not in the `files` list, so it is never part of a published package, and no
+  runtime code path reaches it. Arguments are fixed strings, not user input.
+- **`dsh-run-in-terminal`'s committed browser bundle exceeds the scanner's
+  256 KiB per-file limit**, because it inlines xterm. The store reports the scan
+  surface as incomplete for that reason. The bundle cannot simply be shrunk —
+  inlining is deliberate, since the shell does not seed xterm in its module
+  table, and a plugin may not build at install time.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
