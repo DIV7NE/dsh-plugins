@@ -1,9 +1,28 @@
 {
   "name": "dsh-suggest-next-prompt",
   "version": "0.1.0",
-  "description": "DSH web plugin: a model-generated next prompt in the chat composer placeholder, cycled with Tab and accepted with Enter.",
+  "description": "DSH web plugin: a model-generated next prompt in the chat composer placeholder, pasted with Tab and cycled with the arrow keys.",
   "type": "module",
   "license": "MIT",
+  "author": "DIV7NE",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin",
+    "composer",
+    "prompt",
+    "copilot"
+  ],
+  "homepage": "https://github.com/DIV7NE/dshpluginsdev/tree/main/dsh-suggest-next-prompt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DIV7NE/dshpluginsdev.git",
+    "directory": "dsh-suggest-next-prompt"
+  },
+  "bugs": {
+    "url": "https://github.com/DIV7NE/dshpluginsdev/issues"
+  },
   "main": "lib/index.js",
   "exports": {
     ".": {
@@ -38,8 +57,7 @@
     },
     "compatibility": {
       "dshReleases": {
-        "0.1.5-rc.1": "unknown",
-        "0.1.5-rc.2": "unknown"
+        "0.1.5-rc.1": "compatible"
       }
     }
   },

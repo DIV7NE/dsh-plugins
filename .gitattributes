@@ -1,0 +1,9 @@
+# Normalize to LF in the repository regardless of the authoring platform.
+# The bundle is a committed build artifact, so a CRLF/LF flip would otherwise
+# show up as a spurious diff on every checkout.
+* text=auto eol=lf
+
+# Binary assets keep their bytes.
+*.png binary
+*.jpg binary
+*.tgz binary

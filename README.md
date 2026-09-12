@@ -1,3 +1,65 @@
+# dshpluginsdev
+
+DeepSeek Harness (DSH) **web** plugins, by [DIV7NE](https://github.com/DIV7NE).
+
+Each plugin is a self-contained package in this repository. Every one of them
+declares its own bundle patch, so installing a single directory is enough — the
+DSH CLI appends it to the profile's bundle stack and no profile file is edited by
+hand.
+
+| Plugin | What it does |
+|---|---|
+| [`dsh-suggest-next-prompt/`](dsh-suggest-next-prompt/) | Puts a model-generated next prompt in the chat composer's placeholder. `Tab` pastes it, `↑`/`↓` cycle the shortlist, `Esc` dismisses. |
+| [dsh-run-in-terminal](#dsh-run-in-terminal) | A **Run** button on every chat code block, and an integrated terminal in the right sidebar to run it in. |
+
+## Installing a plugin
+
+```sh
+git clone https://github.com/DIV7NE/dshpluginsdev
+cd dshpluginsdev/<plugin>
+npm install
+npm run install:profile      # builds, packs, and installs into the web profile
+```
+
+Then **restart the DSH server for that profile** — a profile's bundle stack and
+the browser's client-module graph are both composed at boot, so a new plugin
+cannot appear in a running server. Once a plugin is in the graph, later changes
+need only a page reload.
+
+## Repository layout
+
+```
+<plugin>/            one self-contained DSH plugin package
+  src/               source
+  lib/               committed build output (see below)
+  cordis.patch.yml   the bundle patch that installs it
+  test/              hermetic tests, plus a non-hermetic live probe
+  README.md          what it does, how to configure it, its permissions and risks
+docs/superpowers/    design, plan, and implementation notes
+```
+
+**Why `lib/` is committed.** A DSH plugin may not run a `prepare` or `postinstall`
+script, so nothing may build it at install time. The build output therefore ships
+in the repository, unminified. CI fails if it drifts from `src/`.
+
+## Development
+
+```sh
+cd <plugin>
+npm run build        # esbuild
+npm run typecheck    # tsc --noEmit
+npm test             # node:test — hermetic
+npm run install:profile
+```
+
+`npm run build && npm run typecheck && npm test` is the same gate CI runs.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+---
+
 # dsh-run-in-terminal
 
 A DeepSeek Harness **web** plugin that puts a **Run** button on every code

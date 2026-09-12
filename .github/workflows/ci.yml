@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  plugin:
+    name: dsh-suggest-next-prompt (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    defaults:
+      run:
+        working-directory: dsh-suggest-next-prompt
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: dsh-suggest-next-prompt/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # lib/ is committed on purpose (no lifecycle script may build it at install
+      # time), so it must never drift from src/. Without this the repository could
+      # ship a bundle that no longer matches its own source.
+      - name: Committed bundle matches source
+        run: |
+          if [ -n "$(git status --porcelain -- lib)" ]; then
+            echo "lib/ is stale — rebuild and commit it:"
+            git --no-pager diff --stat -- lib
+            exit 1
+          fi
+          echo "lib/ matches src/"

@@ -50,5 +50,18 @@
     "@xterm/xterm": "^5.5.0",
     "esbuild": "^0.24.2",
     "typescript": "^5.7.2"
-  }
+  },
+  "license": "MIT",
+  "author": "DIV7NE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DIV7NE/dshpluginsdev.git"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin",
+    "terminal"
+  ]
 }
