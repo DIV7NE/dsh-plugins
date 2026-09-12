@@ -1,0 +1,52 @@
+{
+  "name": "dsh-suggest-next-prompt",
+  "version": "0.1.0",
+  "description": "DSH web plugin: a model-generated next prompt in the chat composer placeholder, cycled with Tab and accepted with Enter.",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "install:profile": "node scripts/install-profile.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.1.5-rc.1": "unknown",
+        "0.1.5-rc.2": "unknown"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}

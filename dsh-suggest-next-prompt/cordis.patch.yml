@@ -1,0 +1,21 @@
+# dsh-suggest-next-prompt bundle patch.
+#
+# Installing this package through the DSH CLI reconciles the profile bundle
+# list against installed packages and, seeing this declaration, appends
+# dsh-suggest-next-prompt to the stack. The boot merge then inserts the row
+# below, so no profile file is edited by hand.
+#
+# The ids here are the entryIds a marketplace catalog entry must match.
+#
+# To pin the model route instead of reading the session's own, add it:
+#
+#   - insert:
+#       - id: suggest-next-prompt
+#         name: 'dsh-suggest-next-prompt'
+#         config:
+#           provider: deepseek
+#           model: deepseek-chat
+#
+- insert:
+    - id: suggest-next-prompt
+      name: 'dsh-suggest-next-prompt'
