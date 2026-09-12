@@ -28,14 +28,24 @@ does not work, and the reason is worth stating because it is not a bug:
 
 ### 1. The plugin
 
+This plugin lives in the [dsh-plugins](https://github.com/DIV7NE/dsh-plugins)
+monorepo, in its own directory:
+
 ```sh
-cd <this directory>
+git clone https://github.com/DIV7NE/dsh-plugins
+cd dsh-plugins/dsh-chrome-agent
 npm install
 npm run install:profile          # builds, packs, installs into the web profile
 ```
 
 **Restart the DSH server** (`dsh web`) — the profile's bundle stack is composed
 at boot, so a new plugin cannot appear in a running server. Reload the page.
+
+A note for anyone packaging this plugin from outside: it is a directory inside a
+repository, and `dsh plugin add <repo>` resolves the **repository root**, not a
+subdirectory. A monorepo package is therefore installed from its own directory
+(the commands above) or from a marketplace catalog entry that names its
+`manifestPath`; there is no `dsh plugin add` spec that addresses a subdirectory.
 
 ### 2. The companion extension
 
