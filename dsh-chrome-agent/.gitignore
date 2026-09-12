@@ -1,5 +1,7 @@
+# lib/ is deliberately NOT ignored. A DSH plugin may not run a lifecycle script,
+# so nothing builds it at install time — the build output ships in the repository.
+# CI fails if it is missing or drifts from src/.
 node_modules/
-lib/
 dist/
 *.tgz
 

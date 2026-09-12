@@ -38,9 +38,27 @@ jobs:
       - name: Test
         run: npm test
 
-      # lib/ is committed on purpose (no lifecycle script may build it at install
-      # time), so it must never drift from src/. Without this the repository could
-      # ship a bundle that no longer matches its own source.
+      # lib/ is committed on purpose, so two things must hold: it exists, and it
+      # matches src/. The existence check is not redundant — an IGNORED lib/ makes
+      # the drift check pass on a tree that ships no bundle at all, which is
+      # exactly how dsh-chrome-agent once reached a published commit with a
+      # manifest pointing at a main that did not exist.
+      - name: Committed bundle exists
+        run: |
+          if [ ! -f lib/index.js ]; then
+            echo "lib/index.js is missing. A DSH plugin runs no lifecycle script, so"
+            echo "the build output must be committed. Check that .gitignore does not"
+            echo "ignore lib/."
+            exit 1
+          fi
+          if [ -z "$(git ls-files lib)" ]; then
+            echo "lib/ exists on disk but nothing is committed — it is being ignored."
+            exit 1
+          fi
+          echo "lib/ is committed"
+
+      # …and it must never drift from src/, or the repository ships a bundle that
+      # no longer matches its own source.
       - name: Committed bundle matches source
         run: |
           if [ -n "$(git status --porcelain -- lib)" ]; then
@@ -81,8 +99,24 @@ jobs:
       - name: Test
         run: npm test
 
-      # lib/ is committed on purpose (no lifecycle script may build it at install
-      # time), so it must never drift from src/.
+      # lib/ is committed on purpose, so two things must hold: it exists, and it
+      # matches src/. The existence check is not redundant — an IGNORED lib/ makes
+      # the drift check pass on a tree that ships no bundle at all.
+      - name: Committed bundle exists
+        run: |
+          if [ ! -f lib/index.js ]; then
+            echo "lib/index.js is missing. A DSH plugin runs no lifecycle script, so"
+            echo "the build output must be committed. Check that .gitignore does not"
+            echo "ignore lib/."
+            exit 1
+          fi
+          if [ -z "$(git ls-files lib)" ]; then
+            echo "lib/ exists on disk but nothing is committed — it is being ignored."
+            exit 1
+          fi
+          echo "lib/ is committed"
+
+      # …and it must never drift from src/.
       - name: Committed bundle matches source
         run: |
           if [ -n "$(git status --porcelain -- lib)" ]; then
