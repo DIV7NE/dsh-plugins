@@ -136,3 +136,21 @@ jobs:
         working-directory: dsh-chrome-agent
         run: |
           node -e "const z=require('fs').readFileSync('dsh-chrome-agent-webstore.zip');const has=x=>z.includes(Buffer.from(x));if(!has('manifest.json')){console.error('manifest.json missing from zip');process.exit(1)}console.log('webstore zip contains manifest.json at its root')"
+
+  published-artifacts:
+    name: published artifacts carry their entry point
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The per-plugin jobs above check the working tree, which is the vantage
+      # point that missed the original defect: npm pack includes lib/ whenever the
+      # files are on disk, even when .gitignore keeps them out of every commit.
+      # This job packs from a fresh clone of the committed tree instead, so an
+      # ignored-then-uncommitted bundle fails here rather than at a user's install.
+      - name: Pack from the committed tree
+        run: node scripts/verify-published-artifacts.mjs

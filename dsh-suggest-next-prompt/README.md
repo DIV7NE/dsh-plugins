@@ -120,6 +120,12 @@ This is the section that matters most, so it is stated plainly.
   visible output at `maxOutputTokens`. There is no per-session budget in this
   version; the guards are only "the session is idle", "the composer is empty", and
   "no request is already in flight".
+- **Every call is recorded in the session log as `session/suggest-llm-request`**,
+  carrying the route, the output cap, the finish reason, the candidate count, and
+  the provider's token accounting. This is the only accounting these calls get:
+  the harness tracks the agent loop's requests and nothing else, so without the
+  record the cost is real and invisible. Recording never fails the route — if the
+  session cannot be written, the suggestion is still returned.
 - **Thinking is disabled for the auxiliary call.** `GenerateOptions.purpose` is a
   closed union of `'compaction' | 'session-title'`, and this plugin cannot claim
   either value without misreporting its own request in the session log. It sets

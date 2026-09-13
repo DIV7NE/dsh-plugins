@@ -18,7 +18,7 @@ import {
 } from './protocol'
 
 export const name = 'suggest-next-prompt'
-export const inject = ['webServer', 'llm', 'commands', 'agents']
+export const inject = ['webServer', 'llm', 'commands', 'agents', 'session']
 
 /** The plugin config carried by the bundle row. */
 export interface Config {
@@ -70,11 +70,23 @@ export interface AgentLike { readonly id?: string }
 /** One command descriptor, narrowed to the name the catalogue needs. */
 export interface DescriptorLike { readonly name: string }
 
+/**
+ * The append-only session log, narrowed to what this plugin uses.
+ *
+ * The shipped title generator records each of its auxiliary calls the same way.
+ * Doing it here is what makes this plugin's cost auditable: without a record, its
+ * tokens appear in the provider bill and in none of the harness's own accounting.
+ */
+export interface SessionLike {
+  append(type: string, data: unknown): void
+}
+
 /** Everything the handler needs, injected so the tests need no server. */
 export interface HandlerDeps {
   readonly settings: Settings
   readonly agents: { get(id: string): AgentLike | undefined }
   readonly commands: { list(agent: AgentLike): readonly DescriptorLike[] }
+  readonly sessions: { get(id: string): SessionLike | undefined }
   stream(options: Record<string, unknown>): AsyncIterable<Record<string, unknown>>
 }
 
@@ -116,6 +128,8 @@ export interface CallOutcome {
   readonly finish: string
   /** Failure message when the terminal reason carries one. */
   readonly failure?: string
+  /** Provider-reported token accounting for this call, when it reported any. */
+  readonly usage?: Readonly<Record<string, unknown>>
 }
 
 /**
@@ -158,6 +172,7 @@ async function collect(
   let fallback = 0
   let finish = 'none'
   let failure: string | undefined
+  let usage: Record<string, unknown> | undefined
   for await (const chunk of deps.stream(options)) {
     const type = chunk['type']
     const index = typeof chunk['index'] === 'number' ? chunk['index'] : fallback++
@@ -172,6 +187,11 @@ async function collect(
       }
       continue
     }
+    if (type === 'usage') {
+      const reported = chunk['usage']
+      if (reported !== null && typeof reported === 'object') usage = reported as Record<string, unknown>
+      continue
+    }
     if (type === 'finish') {
       const reason = chunk['reason'] as { kind?: unknown; failure?: { message?: unknown } } | undefined
       finish = typeof reason?.kind === 'string' ? reason.kind : 'unknown'
@@ -183,7 +203,8 @@ async function collect(
     .sort((left, right) => left[0] - right[0])
     .map(entry => entry[1])
     .join('')
-  return failure === undefined ? { text, finish } : { text, finish, failure }
+  const outcome: CallOutcome = usage === undefined ? { text, finish } : { text, finish, usage }
+  return failure === undefined ? outcome : { ...outcome, failure }
 }
 
 /**
@@ -236,6 +257,24 @@ export async function handleRequest(deps: HandlerDeps, request: IncomingRequest)
     return { status: 200, body: { candidates: [] } }
   }
   const candidates = sanitizeCandidates(extractArray(outcome.text), catalogue).slice(0, deps.settings.maxCandidates)
+  // Log-only record of the auxiliary call. This is the ONLY accounting this
+  // plugin's tokens get: the harness otherwise sees the agent loop's requests and
+  // nothing else, so without it the cost is real but invisible. It must never be
+  // able to fail the route, hence the guard.
+  try {
+    deps.sessions.get(parsed.sessionId)?.append('session/suggest-llm-request', {
+      route,
+      model: route.model,
+      reasoningEffort: deps.settings.reasoningEffort,
+      maxTokens: deps.settings.maxOutputTokens,
+      finish: outcome.finish,
+      candidates: candidates.length,
+      ...(outcome.usage === undefined ? {} : { usage: outcome.usage }),
+    })
+  } catch {
+    // A session that cannot be reached or written is not a reason to lose a
+    // suggestion the model already produced.
+  }
   return { status: 200, body: { candidates } }
 }
 
@@ -270,6 +309,7 @@ export interface HostContext {
   llm: { stream(options: Record<string, unknown>): AsyncIterable<Record<string, unknown>> }
   commands: { list(agent: AgentLike): readonly DescriptorLike[] }
   agents: { get(id: string): AgentLike | undefined }
+  session: { get(id: string): SessionLike | undefined }
   effect(callback: () => void | (() => void), label?: string): void
 }
 
@@ -285,6 +325,7 @@ export function apply(ctx: HostContext, config?: Config): void {
     settings,
     agents: ctx.agents,
     commands: ctx.commands,
+    sessions: ctx.session,
     stream: options => ctx.llm.stream(options),
   }
   ctx.effect(() => ctx.webServer.register({

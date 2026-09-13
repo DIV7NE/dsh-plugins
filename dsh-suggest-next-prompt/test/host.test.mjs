@@ -74,3 +74,35 @@ test('answers an empty shortlist on unparseable model output', async () => {
   const result = await handleRequest(deps({ stream }), { headers, byteLength: 64, raw: body })
   assert.deepEqual(result.body.candidates, [])
 })
+test('records the auxiliary call in the session log so its cost is auditable', async () => {
+  const appended = []
+  const stream = async function* () {
+    // The real adapter shape: usage, then text, then an OBJECT finish reason.
+    yield { type: 'usage', usage: { inputTokens: 10, outputTokens: 5, cacheReadTokens: 0 } }
+    yield { type: 'text-delta', index: 0, text: '["run the tests"]' }
+    yield { type: 'finish', reason: { kind: 'stop' } }
+  }
+  const sessions = { get: () => ({ append: (type, data) => appended.push({ type, data }) }) }
+  const result = await handleRequest(deps({ stream, sessions }), { headers, byteLength: 64, raw: body })
+
+  assert.equal(result.body.candidates.length, 1)
+  assert.equal(appended.length, 1, 'exactly one log record per call')
+  assert.equal(appended[0].type, 'session/suggest-llm-request')
+  assert.deepEqual(appended[0].data.usage, { inputTokens: 10, outputTokens: 5, cacheReadTokens: 0 })
+  assert.equal(appended[0].data.candidates, 1)
+  assert.equal(appended[0].data.finish, 'stop')
+})
+
+test('a session that cannot be written never costs the suggestion', async () => {
+  const sessions = { get: () => ({ append: () => { throw new Error('session closed') } }) }
+  const result = await handleRequest(deps({ sessions }), { headers, byteLength: 64, raw: body })
+  assert.equal(result.status, 200)
+  assert.equal(result.body.candidates.length, 3)
+})
+
+test('no session resolvable is not an error either', async () => {
+  const sessions = { get: () => undefined }
+  const result = await handleRequest(deps({ sessions }), { headers, byteLength: 64, raw: body })
+  assert.equal(result.status, 200)
+  assert.equal(result.body.candidates.length, 3)
+})

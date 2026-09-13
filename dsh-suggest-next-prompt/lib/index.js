@@ -122,7 +122,7 @@ function buildPrompt(request, catalogue) {
 
 // src/index.ts
 var name = "suggest-next-prompt";
-var inject = ["webServer", "llm", "commands", "agents"];
+var inject = ["webServer", "llm", "commands", "agents", "session"];
 function resolveSettings(config) {
   const provider = typeof config?.provider === "string" ? config.provider : void 0;
   const model = typeof config?.model === "string" ? config.model : void 0;
@@ -158,6 +158,7 @@ async function collect(deps, route, prompt, sessionId, settings, signal) {
   let fallback = 0;
   let finish = "none";
   let failure;
+  let usage;
   for await (const chunk of deps.stream(options)) {
     const type = chunk["type"];
     const index = typeof chunk["index"] === "number" ? chunk["index"] : fallback++;
@@ -172,6 +173,11 @@ async function collect(deps, route, prompt, sessionId, settings, signal) {
       }
       continue;
     }
+    if (type === "usage") {
+      const reported = chunk["usage"];
+      if (reported !== null && typeof reported === "object") usage = reported;
+      continue;
+    }
     if (type === "finish") {
       const reason = chunk["reason"];
       finish = typeof reason?.kind === "string" ? reason.kind : "unknown";
@@ -180,7 +186,8 @@ async function collect(deps, route, prompt, sessionId, settings, signal) {
     }
   }
   const text = [...blocks.entries()].sort((left, right) => left[0] - right[0]).map((entry) => entry[1]).join("");
-  return failure === void 0 ? { text, finish } : { text, finish, failure };
+  const outcome = usage === void 0 ? { text, finish } : { text, finish, usage };
+  return failure === void 0 ? outcome : { ...outcome, failure };
 }
 function extractArray(text) {
   const start = text.indexOf("[");
@@ -219,6 +226,18 @@ async function handleRequest(deps, request) {
     return { status: 200, body: { candidates: [] } };
   }
   const candidates = sanitizeCandidates(extractArray(outcome.text), catalogue).slice(0, deps.settings.maxCandidates);
+  try {
+    deps.sessions.get(parsed.sessionId)?.append("session/suggest-llm-request", {
+      route,
+      model: route.model,
+      reasoningEffort: deps.settings.reasoningEffort,
+      maxTokens: deps.settings.maxOutputTokens,
+      finish: outcome.finish,
+      candidates: candidates.length,
+      ...outcome.usage === void 0 ? {} : { usage: outcome.usage }
+    });
+  } catch {
+  }
   return { status: 200, body: { candidates } };
 }
 async function readBody(req, limit) {
@@ -243,6 +262,7 @@ function apply(ctx, config) {
     settings,
     agents: ctx.agents,
     commands: ctx.commands,
+    sessions: ctx.session,
     stream: (options) => ctx.llm.stream(options)
   };
   ctx.effect(() => ctx.webServer.register({
